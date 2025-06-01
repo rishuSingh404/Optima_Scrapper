@@ -20,8 +20,8 @@ from bs4 import BeautifulSoup
 USERNAME = os.getenv("OPTIMA_USERNAME", "HOCC5T177")
 PASSWORD = os.getenv("OPTIMA_PASSWORD", "9354454550")
 
-PAGE_LOAD_TIMEOUT = 60
-ELEMENT_TIMEOUT = 15
+PAGE_LOAD_TIMEOUT = 120
+ELEMENT_TIMEOUT = 45
 
 
 def get_chrome_driver() -> webdriver.Chrome:
@@ -32,6 +32,8 @@ def get_chrome_driver() -> webdriver.Chrome:
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--window-size=1920,1080")
     chrome_options.add_argument("--remote-debugging-port=9222")
+    chrome_options.add_argument("--disable-extensions")
+    chrome_options.add_argument("--disable-infobars")
 
     driver = webdriver.Chrome(
         ChromeDriverManager().install(),
@@ -53,6 +55,7 @@ def login_to_platform(driver: webdriver.Chrome) -> None:
     WebDriverWait(driver, ELEMENT_TIMEOUT).until(
         EC.presence_of_element_located((By.XPATH, "//div[contains(text(), 'Dashboard')]"))
     )
+    time.sleep(1)
 
 
 def navigate_to_chapter(driver: webdriver.Chrome,
@@ -65,24 +68,28 @@ def navigate_to_chapter(driver: webdriver.Chrome,
         EC.element_to_be_clickable((By.XPATH, area_xpath))
     )
     driver.find_element(By.XPATH, area_xpath).click()
+    time.sleep(1)
 
     level_xpath = f"//button[contains(text(), 'Level {level}')]"
     WebDriverWait(driver, ELEMENT_TIMEOUT).until(
         EC.element_to_be_clickable((By.XPATH, level_xpath))
     )
     driver.find_element(By.XPATH, level_xpath).click()
+    time.sleep(1)
 
     chapter_xpath = f"//div[text()='{chapter_name}']"
     WebDriverWait(driver, ELEMENT_TIMEOUT).until(
         EC.element_to_be_clickable((By.XPATH, chapter_xpath))
     )
     driver.find_element(By.XPATH, chapter_xpath).click()
+    time.sleep(1)
 
     difficulty_xpath = f"//label[text()='{difficulty}']"
     WebDriverWait(driver, ELEMENT_TIMEOUT).until(
         EC.element_to_be_clickable((By.XPATH, difficulty_xpath))
     )
     driver.find_element(By.XPATH, difficulty_xpath).click()
+    time.sleep(1)
 
 
 def count_questions_on_page(driver: webdriver.Chrome) -> int:
@@ -100,7 +107,7 @@ def scroll_to_question(driver: webdriver.Chrome, q_index: int) -> None:
     try:
         q_elem = driver.find_element(By.XPATH, f"//div[@id='questionHolder']/div[{q_index}]")
         driver.execute_script("arguments[0].scrollIntoView({behavior: 'instant', block: 'center'});", q_elem)
-        time.sleep(0.3)
+        time.sleep(0.5)
     except NoSuchElementException:
         pass
 
@@ -202,14 +209,14 @@ def run_scraper_and_return_dict(area_text: str,
     try:
         login_to_platform(driver)
         navigate_to_chapter(driver, area_text, level, chapter_name, difficulty)
-        time.sleep(1.5)
+        time.sleep(2)
         total_qs = count_questions_on_page(driver)
         results = []
         for idx in range(1, total_qs + 1):
             scroll_to_question(driver, idx)
             q_dict = parse_current_q(driver, idx)
             results.append(q_dict)
-            time.sleep(0.2)
+            time.sleep(0.3)
         return results
     finally:
         driver.quit()

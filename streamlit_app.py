@@ -141,7 +141,7 @@ if selected == "Scrape Questions":
             st.error(f"Please fill in: {', '.join(missing)}")
             st.stop()
 
-        with st.spinner("Launching headless browser and scraping..."):
+        with st.spinner("Launching headless browser and scraping…"):
             try:
                 results = run_scraper_and_return_dict(
                     area_text=AREA_TEXT,
