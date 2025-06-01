@@ -8,7 +8,7 @@ from pathlib import Path
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from selenium.common.exceptions import NoSuchElementException, TimeoutException, WebDriverException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -23,6 +23,9 @@ PASSWORD = os.getenv("OPTIMA_PASSWORD", "9354454550")
 PAGE_LOAD_TIMEOUT = 120
 ELEMENT_TIMEOUT = 45
 
+# On Streamlit Cloud, the Chromium binary is typically at /usr/bin/google-chrome
+CHROME_BINARY_PATH = "/usr/bin/google-chrome"
+
 
 def get_chrome_driver() -> webdriver.Chrome:
     chrome_options = Options()
@@ -35,12 +38,17 @@ def get_chrome_driver() -> webdriver.Chrome:
     chrome_options.add_argument("--disable-extensions")
     chrome_options.add_argument("--disable-infobars")
 
-    driver = webdriver.Chrome(
-        ChromeDriverManager().install(),
-        options=chrome_options
-    )
-    driver.set_page_load_timeout(PAGE_LOAD_TIMEOUT)
-    return driver
+    # Explicitly point to the installed Chrome/Chromium binary on Streamlit Cloud
+    chrome_options.binary_location = CHROME_BINARY_PATH
+
+    # Use webdriver_manager to get a matching chromedriver
+    try:
+        driver_path = ChromeDriverManager().install()
+        driver = webdriver.Chrome(driver_path, options=chrome_options)
+        driver.set_page_load_timeout(PAGE_LOAD_TIMEOUT)
+        return driver
+    except WebDriverException as e:
+        raise RuntimeError(f"Could not start ChromeDriver: {e}")
 
 
 def login_to_platform(driver: webdriver.Chrome) -> None:
